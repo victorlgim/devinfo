@@ -1,48 +1,89 @@
 import { Request, Response } from "express";
 import format from "pg-format";
-import { Developer, DeveloperResult } from "../interfaces/developer";
+import {
+  Developer,
+  DeveloperResult,
+  DeveloperInfo,
+  DeveloperInfoResult,
+} from "../interfaces/developer";
 import { QueryConfig } from "pg";
 import { client } from "../database";
 
-export const addDeveloper = async (req: Request, res: Response): Promise<Response> => {
-  const developerData: Developer = req.body;
-
-  const checkExistenceQueryString: string = `
-        SELECT *
-        FROM developers
-        WHERE name = $1;
-    `;
-
-  const checkExistenceQueryConfig: QueryConfig = {
-    text: checkExistenceQueryString,
-    values: [developerData.name],
-  };
-
+export const addDeveloper = async ( req: Request, res: Response): Promise<Response> => {
   try {
-    const checkExistenceResult: DeveloperResult = await client.query(
-      checkExistenceQueryConfig
-    );
+    const developerData: Developer = req.body;
 
-    if (checkExistenceResult.rows.length > 0) {
-      return res
-        .status(409)
-        .json({ message: "this item already exists in the list" });
-    }
-
-    const queryString: string = format(
+    const insertDeveloperInfoQueryString: string = format(
       `
-              INSERT INTO
-                  mechanics (%I)
-              VALUES (%L)
-              RETURNING *;
-            `,
+        INSERT INTO 
+           developers (%I)
+        VALUES 
+           (%L)
+        RETURNING *;
+      `,
       Object.keys(developerData),
       Object.values(developerData)
     );
 
-    const queryResult: DeveloperResult = await client.query(queryString);
-    return res.status(201).json(queryResult.rows[0]);
+    const developerInfoResult: DeveloperResult = await client.query(
+      insertDeveloperInfoQueryString
+    );
+    console.log(developerInfoResult);
+    return res.status(201).json(developerInfoResult.rows[0]);
   } catch (error: any) {
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+export const addDeveloperInfo = async ( req: Request, res: Response): Promise<Response> => {
+  try {
+    const developerId: number = parseInt(req.params.id);
+
+    const developerInfoData: DeveloperInfo = req.body;
+
+    const insertDeveloperInfoQueryString: string = format(
+      `
+         INSERT INTO 
+           developer_infos (developerSince, preferredOS)
+         VALUES 
+           ($1, $2)
+         RETURNING *;
+  `);
+
+      const queryConfig: QueryConfig = {
+        text: insertDeveloperInfoQueryString,
+        values: [developerInfoData.developerSince, developerInfoData.preferredOS]
+    }
+
+    const developerInfoResult: DeveloperInfoResult = await client.query(queryConfig);
+  
+    const developerInfoId = developerInfoResult.rows[0].id;
+
+    const updateDeveloperQueryString: string = format(
+      `
+          UPDATE 
+            developers 
+          SET 
+            developerInfoId = $1
+          WHERE 
+            id = $2 
+          RETURNING *;
+        `
+    );
+
+    const queryConfigDevelopment: QueryConfig = {
+        text: updateDeveloperQueryString,
+        values: [developerInfoId, developerId]
+    }
+
+    const developerResult: DeveloperResult = await client.query(queryConfigDevelopment);
+    console.log(developerResult)
+
+    return res.status(201).json(developerResult.rows[0]);
+  } catch (error: any) {
+   
     return res.status(500).json({
       message: "Internal server error",
     });

@@ -1,4 +1,6 @@
 CREATE TYPE OS AS ENUM ('Windows', 'Linux', 'MacOS');
+CREATE TYPE TECH AS ENUM ('Javascript', 'Python', 'React', 'Express.js', 'HTML',
+'CSS', 'Django', 'PostgreSQL', 'MongoDB');
 
 CREATE TABLE developer_infos (
   id SERIAL PRIMARY KEY,
@@ -9,8 +11,9 @@ CREATE TABLE developer_infos (
 CREATE TABLE developers (
   id SERIAL PRIMARY KEY,
   name VARCHAR(50) NOT NULL,
-  email VARCHAR(50) NOT NULL UNIQUE,
-  developerInfoId INTEGER NOT NULL UNIQUE REFERENCES developer_infos (id)
+  email VARCHAR(50) unique not null,
+  developerInfoId integer UNIQUE,
+  FOREIGN KEY (developerInfoId) REFERENCES developer_infos (id)
 );
 
 CREATE TABLE projects (
@@ -20,29 +23,16 @@ CREATE TABLE projects (
   estimatedTime VARCHAR(20) NOT NULL,
   repository VARCHAR(120) NOT NULL,
   startDate DATE NOT NULL,
-  endDate DATE,
-  developerId INTEGER NOT NULL REFERENCES developers (id)
+  endDate DATE
 );
 
 CREATE TABLE technologies (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(30) NOT NULL
+  name TECH NOT NULL
 );
 
-INSERT INTO technologies (name) VALUES 
-  ('JavaScript'), 
-  ('Python'), 
-  ('React'), 
-  ('Express.js'), 
-  ('HTML'), 
-  ('CSS'), 
-  ('Django'), 
-  ('PostgreSQL'), 
-  ('MongoDB');
 
 CREATE TABLE projects_technologies (
   id SERIAL PRIMARY KEY,
-  addedIn DATE NOT NULL,
-  projectId INTEGER NOT NULL REFERENCES projects (id),
-  technologyId INTEGER NOT NULL REFERENCES technologies (id)
+  addedIn DATE NOT NULL
 );
