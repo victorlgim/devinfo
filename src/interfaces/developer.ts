@@ -12,8 +12,15 @@ export interface iDeveloper extends Developer {
 
 export type DeveloperResult = QueryResult<iDeveloper>;
 
+export interface iDeveloperInfoResult extends iDeveloper {
+    developerSince: Date;
+    preferredOS: "Windows" | "Linux" | "MacOS";
+}
+
+export type iDeveloperInfoResultQS = QueryResult<iDeveloperInfoResult>;
+
 export interface DeveloperInfo {
-  developerSince: Date;
+  developerSince: string;
   preferredOS: "Windows" | "Linux" | "MacOS";
 }
 

@@ -6,12 +6,14 @@ import {
   DeveloperInfo,
   DeveloperResult,
 } from "../interfaces/developer";
+import { iDeveloperInfoResultQS } from "../interfaces/developer";
 
-export const ensureDeveloperExists = async ( req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
+export const ensureDeveloperExists = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> => {
   const { name, email }: Developer = req.body;
-  const keys = Object.keys(req.body);
-
-  const validateKeys = ["name", "email"];
 
   const checkExistenceQueryString: string = `
           SELECT 
@@ -27,18 +29,14 @@ export const ensureDeveloperExists = async ( req: Request, res: Response, next: 
     values: [email],
   };
 
-  const checkExistenceResult: DeveloperResult = await client.query(checkExistenceQueryConfig);
+  const checkExistenceResult: DeveloperResult = await client.query(
+    checkExistenceQueryConfig
+  );
 
   if (checkExistenceResult.rows.length > 0) {
     return res.status(409).json({ message: "Email already exists." });
   }
 
-  const isValid = keys.every(key => validateKeys.includes(key));
-
-  if (!isValid) {
-    res.status(400).json({ message: "invalid input keys" });
-    return;
-  }
 
   if (name) {
     if (typeof name !== "string") {
@@ -57,20 +55,18 @@ export const ensureDeveloperExists = async ( req: Request, res: Response, next: 
   next();
 };
 
-export const ensureInfoDeveloperExists = async ( req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
-  const { developerSince, preferredOS }: DeveloperInfo = req.body;
-  const id = req.params.id;
-  const keys = Object.keys(req.body);
-  const validateKeys = ["developerSince", "preferredOS"];
+export const ensureDeveloperIdExists = async ( req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
 
-  const checkExistenceQueryString: string = `
-          SELECT 
-               *
-          FROM 
-              developers
-          WHERE 
-              id = $1;
-      `;
+    const id = parseInt(req.params.id)
+
+    const checkExistenceQueryString: string = `
+    SELECT 
+         *
+    FROM 
+        developers
+    WHERE 
+        id = $1;
+`;
 
   const checkExistenceQueryConfig: QueryConfig = {
     text: checkExistenceQueryString,
@@ -78,31 +74,246 @@ export const ensureInfoDeveloperExists = async ( req: Request, res: Response, ne
   };
 
   const checkExistenceResult: DeveloperResult = await client.query(checkExistenceQueryConfig);
-
+  console.log(checkExistenceResult.rows.length)
   if (!checkExistenceResult.rows.length) {
     return res.status(404).json({ message: "Developer not found" });
   }
 
-  const isValid = keys.every(key => validateKeys.includes(key));
+  next()
 
-  if (!isValid) {
-    res.status(400).json({ message: "invalid input keys" });
-    return;
   }
 
-  if (developerSince) {
-    if (typeof developerSince !== "string") {
-      res.status(400).json({ message: "invalid 'developerSince' type" });
+export const ensureInfoDeveloperExists = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> => {
+  try {
+    const { developerSince, preferredOS }: DeveloperInfo = req.body;
+    const id = req.params.id;
+
+    const checkExistenceQueryString: string = `
+                SELECT 
+                     *
+                FROM 
+                    developers
+                WHERE 
+                    id = $1;
+            `;
+
+    const checkExistenceQueryConfig: QueryConfig = {
+      text: checkExistenceQueryString,
+      values: [id],
+    };
+
+    const checkExistenceResult: DeveloperResult = await client.query(
+      checkExistenceQueryConfig
+    );
+
+    if (!checkExistenceResult.rows.length) {
+        return res.status(404).json({ message: "Developer not found" });
+      }
+
+   
+
+    if (checkExistenceResult.rows.length > 0) {
+      if (checkExistenceResult.rows[0].developerInfoId) {
+        return res.status(409).json({ message: "The developer already has the registered information." });
+      }
+
+    }
+
+    if (!developerSince) {
+        res.status(400).json({ message: "The field 'developerSince' is required." });
+        return;
+    }
+
+    if (!preferredOS) {
+        res.status(400).json({ message: "The field 'preferredOS' is required." });
+        return;
+    }
+
+    if (developerSince) {
+      if (typeof developerSince !== "string") {
+        res.status(400).json({ message: "invalid 'developerSince' type" });
+        return;
+      }
+    }
+
+    if (preferredOS) {
+      if (typeof preferredOS !== "string") {
+        res.status(400).json({ message: "invalid 'preferredOS' type" });
+        return;
+      }
+    }
+
+   
+
+    next();
+  } catch (error: any) {
+    console.log(error)
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+export const ensureDevelopersRepeatMiddleware = async (
+  request: Request,
+  response: Response,
+  next: NextFunction
+): Promise<Response | void> => {
+  const id: number = parseInt(request.params.id);
+
+  const { name, email } = request.body;
+
+  if (name) {
+    if (typeof name !== "string") {
+      response.status(400).json({ message: "invalid input type" });
       return;
     }
   }
 
-  if (preferredOS) {
-    if (typeof preferredOS !== "string") {
-      res.status(400).json({ message: "invalid 'preferredOS' type" });
+  if (email) {
+    if (typeof email !== "string") {
+      response.status(400).json({ message: "invalid input type" });
+      return;
+    }
+  }
+
+  const queryString: string = `
+          SELECT
+              *
+          FROM
+              developers
+          WHERE
+              id = $1;
+      `;
+
+  const queryConfig: QueryConfig = {
+    text: queryString,
+    values: [id],
+  };
+
+  const queryResult: DeveloperResult = await client.query(queryConfig);
+ 
+
+  if (email) {
+    if (queryResult.rows[0].email === request.body.email) {
+      response.status(409).json({ message: `already exists ${email}` });
       return;
     }
   }
 
   next();
+};
+
+export const ensureUpdateInfoDeveloperExists = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> => {
+  try {
+    const { developerSince, preferredOS }: DeveloperInfo = req.body;
+    const id = req.params.id;
+
+    const checkExistenceQueryString: string = `
+                  SELECT 
+                       *
+                  FROM 
+                      developers
+                  WHERE 
+                      id = $1;
+              `;
+
+    const checkExistenceQueryConfig: QueryConfig = {
+      text: checkExistenceQueryString,
+      values: [id],
+    };
+
+    const checkExistenceInfoString: string = `
+     SELECT 
+         d.id, d.name, d.email, di."preferredOS"
+     FROM
+         developers d 
+     JOIN
+         developer_infos di 
+     ON 
+         d."developerInfoId" = di.id 
+     WHERE 
+         d.id = $1
+      `;
+
+    const checkExistenceInfoQueryString: QueryConfig = {
+      text: checkExistenceInfoString,
+      values: [id],
+    };
+
+    const checkExistenceResult: DeveloperResult = await client.query(
+      checkExistenceQueryConfig
+    );
+    const checkExistenceInfoResult: iDeveloperInfoResultQS = await client.query(
+      checkExistenceInfoQueryString
+    );
+
+    console.log(checkExistenceInfoResult.rows[0].preferredOS)
+
+    if (checkExistenceInfoResult.rows.length === 0) {
+        return res.status(404).json({ message: "The developer has not yet registered the information." })
+    }
+
+    if (!preferredOS && !developerSince) {
+        res.status(400).json({ message: "You need to insert one of the required fields." });
+        return;
+    }
+   
+    if (preferredOS) {
+        if (preferredOS !== ("Windows" || "Linux" || "MacOS")) {
+            res.status(400).json({ message: "You need to fill in the preferredOS with one of the types: Windows, Linux or MacOS" });
+            return;
+        }
+    }
+   
+    if(developerSince) {
+        if(developerSince.length !== 10) {
+            res.status(400).json({ message: "You need to enter the developerSince type in the following format: 'xxxx-xx-xx'" });
+            return;
+        }
+    }
+    
+
+    if (checkExistenceResult) {
+      if (!checkExistenceResult.rows.length) {
+        return res.status(404).json({ message: "Developer not found" });
+      }
+    }
+
+    
+
+    if (developerSince) {
+      if (typeof developerSince !== "string") {
+        res.status(400).json({ message: "invalid 'developerSince' type" });
+        return;
+      }
+    }
+
+    if (preferredOS) {
+      if (typeof preferredOS !== "string") {
+        res.status(400).json({ message: "invalid 'preferredOS' type" });
+        return;
+      }
+    }
+
+    if (checkExistenceInfoResult.rows.length && checkExistenceInfoResult.rows[0].preferredOS === preferredOS) {
+      res.status(409).json({ message: `already exists ${preferredOS} in ${checkExistenceInfoResult.rows[0].email}`});
+      return;
+    }
+
+    next();
+  } catch (error: any) {
+    console.log(error)
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
 };
