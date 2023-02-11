@@ -5,10 +5,10 @@ import {
   DeveloperResult,
   DeveloperInfo,
   DeveloperInfoResult,
-} from "../interfaces/developer";
+} from "../models/developer/developer";
 import { QueryConfig } from "pg";
 import { client } from "../database";
-import { Project, ProjectResult } from "../interfaces/project";
+import { Project, ProjectResult } from "../models/projects/project";
 
 export const getAllProjects = async (
   req: Request,

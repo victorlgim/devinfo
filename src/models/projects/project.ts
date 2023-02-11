@@ -15,16 +15,4 @@ export interface iProjectTech extends Project {
     technologyName: string;
 }
 
-export type ProjectResult = QueryResult<iProjectTech>
-
-export interface ProjectTechnology {
-  id: number;
-  addedIn: Date;
-  projectId: number;
-  technologyId: number;
-}
-
-export interface Technology {
-  id: number;
-  name: string;
-}
+export type ProjectResult = QueryResult<iProjectTech>;

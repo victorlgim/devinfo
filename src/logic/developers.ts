@@ -1,76 +1,58 @@
 import { Request, Response } from "express";
 import format from "pg-format";
-import {
-  Developer,
-  DeveloperResult,
-  DeveloperInfo,
-  DeveloperInfoResult,
-} from "../interfaces/developer";
+import { Developer, DeveloperResult, DeveloperInfo, DeveloperInfoResult } from "../models/developer/developer";
 import { QueryConfig } from "pg";
 import { client } from "../database";
 
-export const getAllDevelopers = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  const getProjectsQueryString: string = format(`
-    SELECT 
-    developers.id AS "developerID", 
-    developers.name AS "developerName", 
-    developers.email AS "developerEmail", 
-    developer_infos.id AS "developerInfoID",
-    developer_infos."developerSince" AS "developerInfoDeveloperSince", 
-    developer_infos."preferredOS" AS "developerInfoPreferredOS" FROM developers
- LEFT JOIN 
-    developer_infos ON developers."developerInfoId" = developer_infos.id
-      ORDER BY 
-         developers.id;
-    `);
+export const getAllDevelopers = async (req: Request, res: Response): Promise<Response> => {
+    const query = `
+      SELECT 
+        developers.id AS "developerID", 
+        developers.name AS "developerName", 
+        developers.email AS "developerEmail", 
+        dev_infos.id AS "developerInfoID",
+        dev_infos."developerSince" AS "developerInfoDeveloperSince", 
+        dev_infos."preferredOS" AS "developerInfoPreferredOS"
+      FROM developers
+      LEFT JOIN developer_infos dev_infos ON developers."developerInfoId" = dev_infos.id
+      ORDER BY developers.id;
+    `;
+  
+    const result = await client.query(query);
+    return res.status(200).json(result.rows);
+  };
 
-  const getProjectsResult: any = await client.query(getProjectsQueryString);
-
-  return res.status(200).json(getProjectsResult.rows);
-};
-
-export const getDeveloperAndProjects = async ( req: Request, res: Response): Promise<Response> => {
+  export const getDeveloperAndProjects = async ( req: Request, res: Response): Promise<Response> => {
     const id = req.params.id;
   
-    const getDevelopersQueryString: string = `
-    SELECT developers.id AS "developerID",
-    developers.name AS "developerName",
-    developers.email AS "developerEmail",
-    developer_infos.id AS "developerInfoID",
-    developer_infos."developerSince" AS "developerInfoDeveloperSince",
-    developer_infos."preferredOS" AS "developerInfoPreferredOS",
-    projects.id AS "projectID",
-    projects.name AS "projectName",
-    projects.description AS "projectDescription",
-    projects."estimatedTime" AS "projectEstimatedTime",
-    projects.repository AS "projectRepository",
-    projects."startDate" AS "projectStartDate",
-    projects."endDate" AS "projectEndDate",
-    technologies.id AS "technologyId",
-    technologies.name AS "technologyName"
-FROM developers
-JOIN developer_infos ON developers."developerInfoId" = developer_infos.id
-JOIN projects ON developers.id = projects."developerId"
-LEFT JOIN projects_technologies ON projects.id = projects_technologies."projectId"
-LEFT JOIN technologies ON projects_technologies."technologyId" = technologies.id
-WHERE developers.id = $1
-ORDER BY projects.id, technologies.id
-     `;
+    const query = `
+      SELECT 
+        developers.id AS "developerID",
+        developers.name AS "developerName",
+        developers.email AS "developerEmail",
+        dev_infos.id AS "developerInfoID",
+        dev_infos."developerSince" AS "developerInfoDeveloperSince",
+        dev_infos."preferredOS" AS "developerInfoPreferredOS",
+        projects.id AS "projectID",
+        projects.name AS "projectName",
+        projects.description AS "projectDescription",
+        projects."estimatedTime" AS "projectEstimatedTime",
+        projects.repository AS "projectRepository",
+        projects."startDate" AS "projectStartDate",
+        projects."endDate" AS "projectEndDate",
+        technologies.id AS "technologyId",
+        technologies.name AS "technologyName"
+      FROM developers
+      JOIN developer_infos dev_infos ON developers."developerInfoId" = dev_infos.id
+      JOIN projects ON developers.id = projects."developerId"
+      LEFT JOIN projects_technologies ON projects.id = projects_technologies."projectId"
+      LEFT JOIN technologies ON projects_technologies."technologyId" = technologies.id
+      WHERE developers.id = $1
+      ORDER BY projects.id, technologies.id
+    `;
   
-    const checkExistenceQueryConfig: QueryConfig = {
-      text: getDevelopersQueryString,
-      values: [id],
-    };
-  
-    const checkExistenceResult: DeveloperResult = await client.query(
-      checkExistenceQueryConfig.text,
-      [id]
-    );
-  
-    return res.status(200).json(checkExistenceResult.rows[0]);
+    const result = await client.query<DeveloperResult>(query, [id]);
+    return res.status(200).json(result.rows[0]);
   };
 
 
