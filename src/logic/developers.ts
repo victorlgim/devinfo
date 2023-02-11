@@ -56,10 +56,7 @@ export const getAllDevelopers = async (req: Request, res: Response): Promise<Res
   };
 
 
-export const getDeveloper = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const getDeveloper = async ( req: Request, res: Response): Promise<Response> => {
   const id = req.params.id;
 
   const getDevelopersQueryString: string = `
@@ -89,10 +86,7 @@ export const getDeveloper = async (
   return res.status(200).json(checkExistenceResult.rows[0]);
 };
 
-export const addDeveloper = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const addDeveloper = async ( req: Request, res: Response): Promise<Response> => {
   try {
     const { name, email }: Developer = req.body;
 
@@ -123,10 +117,7 @@ export const addDeveloper = async (
   }
 };
 
-export const addDeveloperInfo = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const addDeveloperInfo = async ( req: Request, res: Response): Promise<Response> => {
   try {
     const developerId: number = parseInt(req.params.id);
 
@@ -182,10 +173,7 @@ export const addDeveloperInfo = async (
   }
 };
 
-export const updateDeveloper = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const updateDeveloper = async ( req: Request, res: Response): Promise<Response> => {
   const { name, email } = req.body;
   try {
     const id: number = parseInt(req.params.id);
@@ -256,10 +244,7 @@ export const updateDeveloperInfo = async (
   }
 };
 
-export const deleteDeveloper = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const deleteDeveloper = async ( req: Request, res: Response): Promise<Response> => {
   const id = req.params.id;
 
   const deleteDevelopersQueryString: string = `

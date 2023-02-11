@@ -1,43 +1,35 @@
 import { Request, Response } from "express";
 import format from "pg-format";
-import {
-  Developer,
-  DeveloperResult,
-  DeveloperInfo,
-  DeveloperInfoResult,
-} from "../models/developer/developer";
+import { DeveloperResult } from "../models/developer/developer";
 import { QueryConfig } from "pg";
 import { client } from "../database";
 import { Project, ProjectResult } from "../models/projects/project";
 
-export const getAllProjects = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  const getAllInfoQueryString: string = format(`
-  SELECT 
-  p.id as "projectID", 
-  p.name as "projectName", 
-  p.description as "projectDescription", 
-  p."estimatedTime" as "projectEstimatedTime", 
-  p.repository as "projectRepository", 
-  p."startDate" as "projectStartDate", 
-  p."endDate" as "projectEndDate", 
-  p."developerId" as "projectDeveloperID", 
-  t.id as "technologyID", 
-  t.name as "technologyName"
-FROM 
-  projects p
-LEFT JOIN 
-  projects_technologies pt 
-ON 
-  p.id = pt."projectId"
-LEFT JOIN 
-  technologies t 
-ON 
-  pt."technologyId" = t.id
-ORDER BY "projectID";
-        `);
+export const getAllProjects = async ( req: Request, res: Response): Promise<Response> => {
+    const getAllInfoQueryString: string = format(`
+    SELECT 
+      p.id as "projectID", 
+      p.name as "projectName", 
+      p.description as "projectDescription", 
+      p."estimatedTime" as "projectEstimatedTime", 
+      p.repository as "projectRepository", 
+      p."startDate" as "projectStartDate", 
+      p."endDate" as "projectEndDate", 
+      p."developerId" as "projectDeveloperID", 
+      t.id as "technologyID", 
+      t.name as "technologyName"
+    FROM 
+      projects p
+    LEFT JOIN 
+      projects_technologies pt 
+    ON 
+      p.id = pt."projectId"
+    LEFT JOIN 
+      technologies t 
+    ON 
+      pt."technologyId" = t.id
+    ORDER BY "projectID";
+    `);
 
   const checkExistenceQueryConfig: QueryConfig = {
     text: getAllInfoQueryString,
@@ -50,10 +42,7 @@ ORDER BY "projectID";
   return res.status(200).json(checkExistenceResult.rows);
 };
 
-export const getProjectById = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const getProjectById = async ( req: Request, res: Response): Promise<Response> => {
   const id: number = parseInt(req.params.id);
 
   const getProjectQueryString: string = format(`
@@ -95,10 +84,7 @@ export const getProjectById = async (
   return res.status(200).json(getProjectResult.rows);
 };
 
-export const addProjects = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const addProjects = async ( req: Request, res: Response): Promise<Response> => {
   try {
     const {
       name,
@@ -135,17 +121,13 @@ export const addProjects = async (
 
     return res.status(201).json(projectInfoResult.rows[0]);
   } catch (error: any) {
-    console.log(error);
     return res.status(400).json({
       message: "Invalid date format.",
     });
   }
 };
 
-export const updateProjects = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const updateProjects = async ( req: Request, res: Response): Promise<Response> => {
   const id: number = parseInt(req.params.id);
 
   const updateData = { id };
@@ -180,10 +162,7 @@ export const updateProjects = async (
   return res.status(201).json(queryResult.rows[0]);
 };
 
-export const deleteProject = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const deleteProject = async ( req: Request, res: Response): Promise<Response> => {
   const id = req.params.id;
 
   const deleteDevelopersQueryString: string = `
@@ -197,10 +176,7 @@ export const deleteProject = async (
   return res.status(204).send();
 };
 
-export const addTechnologiesProjects = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const addTechnologiesProjects = async ( req: Request, res: Response): Promise<Response> => {
   try {
     const id: number = parseInt(req.params.id);
 
@@ -298,17 +274,13 @@ export const addTechnologiesProjects = async (
 
     return res.status(201).json(projectResult.rows[0]);
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       message: "Internal server error",
     });
   }
 };
 
-export const deleteTech = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const deleteTech = async ( req: Request, res: Response): Promise<Response> => {
   try {
     const id = req.params.id;
     const name = req.params.name;
@@ -316,11 +288,10 @@ export const deleteTech = async (
     
 
     const deleteDevelopersQueryString: string = `
-          DELETE 
-             FROM 
-               projects_technologies
-             WHERE 
-              "projectId" = $1 AND "technologyId" = (SELECT id FROM technologies WHERE name = $2)
+          DELETE FROM 
+            projects_technologies
+          WHERE 
+           "projectId" = $1 AND "technologyId" = (SELECT id FROM technologies WHERE name = $2)
       `;
 
     const queryConfig: QueryConfig = {
@@ -332,7 +303,6 @@ export const deleteTech = async (
 
     return res.status(204).send();
   } catch (error: any) {
-    console.log(error);
     return res.status(500).json({
       message: "Internal server error",
     });
