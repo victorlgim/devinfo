@@ -228,6 +228,13 @@ export const ensureDevelopersRepeatMiddleware = async (
     }
   }
 
+  if (name) {
+    if (queryResult.rows[0].name === request.body.name) {
+      response.status(409).json({ message: `Do not enter duplicate values` });
+      return;
+    }
+  }
+
   next();
 };
 

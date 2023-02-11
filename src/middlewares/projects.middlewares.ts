@@ -388,7 +388,10 @@ export const ensureProjectsExistsDeleteIdMiddleware = async (
   res: Response,
   next: NextFunction
 ): Promise<Response | void> => {
-  const id: number = parseInt(req.params.id);
+  
+  const id: any = req.params.id;
+
+
   const name: string = req.params.name;
   const validateLanguage = [
     "JavaScript",
@@ -449,6 +452,11 @@ export const ensureProjectsExistsDeleteIdMiddleware = async (
   const queryResult: DeveloperResult = await client.query(queryConfig);
   const queryResultName: DeveloperResult = await client.query(queryConfigName);
 
+  if (!queryResult.rows.length) {
+    res.status(404).json({ message: `Project not found` });
+    return;
+  }
+
   if (!queryResultName.rows.length) {
     res
       .status(404)
@@ -456,10 +464,7 @@ export const ensureProjectsExistsDeleteIdMiddleware = async (
     return;
   }
 
-  if (!queryResult.rows.length) {
-    res.status(404).json({ message: `Project not found` });
-    return;
-  }
+  
 
   next();
 };

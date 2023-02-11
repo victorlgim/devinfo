@@ -309,23 +309,32 @@ export const deleteTech = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const id = req.params.id;
-  const name = req.params.name;
+  try {
+    const id = req.params.id;
+    const name = req.params.name;
 
-  const deleteDevelopersQueryString: string = `
-    DELETE 
-       FROM 
-         projects_technologies
-       WHERE 
-        "projectId" = $1 AND "technologyId" = (SELECT id FROM technologies WHERE name = $2)
-`;
+    
 
-  const queryConfig: QueryConfig = {
-    text: deleteDevelopersQueryString,
-    values: [id, name],
-  };
+    const deleteDevelopersQueryString: string = `
+          DELETE 
+             FROM 
+               projects_technologies
+             WHERE 
+              "projectId" = $1 AND "technologyId" = (SELECT id FROM technologies WHERE name = $2)
+      `;
 
-  await client.query(queryConfig);
+    const queryConfig: QueryConfig = {
+      text: deleteDevelopersQueryString,
+      values: [id, name],
+    };
 
-  return res.status(204).send();
+    await client.query(queryConfig);
+
+    return res.status(204).send();
+  } catch (error: any) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
 };
