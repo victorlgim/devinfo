@@ -1,6 +1,6 @@
 import express, { Application } from "express";
 import { startDatabase } from "./database";
-import { addDeveloper, addDeveloperInfo, deleteDeveloper, getAllDevelopers, getDeveloper, updateDeveloper, updateDeveloperInfo  } from "./logic/developers";
+import { addDeveloper, addDeveloperInfo, deleteDeveloper, getAllDevelopers, getDeveloper, getDeveloperAndProjects, updateDeveloper, updateDeveloperInfo  } from "./logic/developers";
 import { addProjects, addTechnologiesProjects, deleteProject, deleteTech, getAllProjects, getProjectById, updateProjects } from "./logic/projects";
 import { ensureDeveloperExists, ensureInfoDeveloperExists, ensureDevelopersRepeatMiddleware, ensureUpdateInfoDeveloperExists, ensureDeveloperIdExists } from "./middlewares/developers.middlewares";
 import { ensureProjectExistsMiddleware, ensureProjectsExistsDeleteIdMiddleware, ensureProjectsExistsIdMiddleware, ensureProjectsExistsTechnologiesMiddleware, ensureUpdateInfoProjectsExists } from "./middlewares/projects.middlewares";
@@ -13,7 +13,7 @@ app.use(express.json());
 
 app.get("/developers", getAllDevelopers)
 app.get("/developers/:id", ensureDeveloperIdExists, getDeveloper)
-app.get("/developers/:id/projects")
+app.get("/developers/:id/projects", ensureDeveloperIdExists, getDeveloperAndProjects)
 app.post("/developers", ensureDeveloperExists, addDeveloper);
 app.post("/developers/:id/infos", ensureInfoDeveloperExists, addDeveloperInfo)
 app.patch("/developers/:id", ensureDevelopersRepeatMiddleware, updateDeveloper)

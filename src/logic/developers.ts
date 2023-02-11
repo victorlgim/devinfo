@@ -31,6 +31,49 @@ export const getAllDevelopers = async (
 
   return res.status(200).json(getProjectsResult.rows);
 };
+
+export const getDeveloperAndProjects = async ( req: Request, res: Response): Promise<Response> => {
+    const id = req.params.id;
+  
+    const getDevelopersQueryString: string = `
+    SELECT developers.id AS "developerID",
+    developers.name AS "developerName",
+    developers.email AS "developerEmail",
+    developer_infos.id AS "developerInfoID",
+    developer_infos."developerSince" AS "developerInfoDeveloperSince",
+    developer_infos."preferredOS" AS "developerInfoPreferredOS",
+    projects.id AS "projectID",
+    projects.name AS "projectName",
+    projects.description AS "projectDescription",
+    projects."estimatedTime" AS "projectEstimatedTime",
+    projects.repository AS "projectRepository",
+    projects."startDate" AS "projectStartDate",
+    projects."endDate" AS "projectEndDate",
+    technologies.id AS "technologyId",
+    technologies.name AS "technologyName"
+FROM developers
+JOIN developer_infos ON developers."developerInfoId" = developer_infos.id
+JOIN projects ON developers.id = projects."developerId"
+LEFT JOIN projects_technologies ON projects.id = projects_technologies."projectId"
+LEFT JOIN technologies ON projects_technologies."technologyId" = technologies.id
+WHERE developers.id = $1
+ORDER BY projects.id, technologies.id
+     `;
+  
+    const checkExistenceQueryConfig: QueryConfig = {
+      text: getDevelopersQueryString,
+      values: [id],
+    };
+  
+    const checkExistenceResult: DeveloperResult = await client.query(
+      checkExistenceQueryConfig.text,
+      [id]
+    );
+  
+    return res.status(200).json(checkExistenceResult.rows[0]);
+  };
+
+
 export const getDeveloper = async (
   req: Request,
   res: Response
