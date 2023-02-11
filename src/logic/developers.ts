@@ -4,46 +4,48 @@ import { Developer, DeveloperResult, DeveloperInfo, DeveloperInfoResult } from "
 import { QueryConfig } from "pg";
 import { client } from "../database";
 
-export const getAllDevelopers = async ( req: Request, res: Response): Promise<Response> => {
-  const getDevelopersQueryString: string = format(`
-     SELECT 
-      developers.id AS "developerID", developers.name 
-      AS "developerName", developers.email 
-      AS "developerEmail", developer_infos.id 
-      AS "developerInfoID", developer_infos."developerSince" 
-      AS "developerInfoDeveloperSince", developer_infos."preferredOS" 
-      AS "developerInfoPreferredOS"
-     FROM developers
-     LEFT JOIN developer_infos ON developers."developerInfoId" = developer_infos.id
-     ORDER BY developers.id;   
- `);
-
-  const checkExistenceQueryConfig: QueryConfig = {
-    text: getDevelopersQueryString,
+export const getAllProjectsAndTechnologies = async (req: Request, res: Response): Promise<Response> => {
+    const getProjectsQueryString: string = format(`
+      SELECT 
+        projects.id AS "projectID", 
+        projects.name AS "projectName", 
+        projects.description AS "projectDescription",
+        projects."estimatedTime" AS "projectEstimatedTime", 
+        projects.repository AS "projectRepository",
+        projects."startDate" AS "projectStartDate", 
+        projects."endDate" AS "projectEndDate",
+        projects."developerId" AS "projectDeveloperID", 
+        technologies.id AS "technologyID", 
+        technologies.name AS "technologyName"
+      FROM 
+        projects
+      LEFT JOIN 
+         projects_technologies ON projects.id = projects_technologies."projectId"
+      LEFT JOIN 
+         technologies ON projects_technologies."technologyId" = technologies.id
+      ORDER BY 
+         projects.id;
+    `);
+  
+    const getProjectsResult: any = await client.query(getProjectsQueryString);
+  
+    return res.status(200).json(getProjectsResult.rows);
   };
-
-  const checkExistenceResult: DeveloperResult = await client.query(
-    checkExistenceQueryConfig
-  );
-
-  return res.status(200).json(checkExistenceResult.rows);
-};
-
 export const getDeveloper = async ( req: Request, res: Response): Promise<Response> => {
     const id = req.params.id
 
     const getDevelopersQueryString: string = `
     SELECT 
-       developers.id 
-    AS "developerID", developers.name
-    AS "developerName", developers.email 
-    AS "developerEmail", developer_infos.id 
-    AS "developerInfoID", developer_infos."developerSince" 
-    AS "developerInfoDeveloperSince", developer_infos."preferredOS" 
-    AS "developerInfoPreferredOS" FROM developers
+       developers.id AS "developerID", 
+       developers.name AS "developerName", 
+       developers.email AS "developerEmail", 
+       developer_infos.id AS "developerInfoID",
+       developer_infos."developerSince" AS "developerInfoDeveloperSince", 
+       developer_infos."preferredOS" AS "developerInfoPreferredOS" FROM developers
     LEFT JOIN 
-    developer_infos ON developers."developerInfoId" = developer_infos.id
-    WHERE developers.id = $1;  
+       developer_infos ON developers."developerInfoId" = developer_infos.id
+    WHERE 
+       developers.id = $1;  
    `;
 
   const checkExistenceQueryConfig: QueryConfig = {
@@ -55,6 +57,7 @@ export const getDeveloper = async ( req: Request, res: Response): Promise<Respon
 
   return res.status(200).json(checkExistenceResult.rows[0]);
 };
+
 
 export const addDeveloper = async ( req: Request, res: Response): Promise<Response> => {
   try {
@@ -78,7 +81,6 @@ export const addDeveloper = async ( req: Request, res: Response): Promise<Respon
 
     return res.status(201).json(developerInfoResult.rows[0]);
   } catch (error: any) {
-    console.log(error)
     return res.status(500).json({
       message: "Internal server error",
     });
@@ -133,7 +135,6 @@ export const addDeveloperInfo = async ( req: Request, res: Response): Promise<Re
 
     return res.status(201).json(developerResult.rows[0]);
   } catch (error: any) {
-    console.log(error)
     return res.status(500).json({
       message: "Internal server error",
     });
@@ -152,7 +153,9 @@ export const updateDeveloper = async ( req: Request, res: Response): Promise<Res
     `
         UPDATE 
             developers 
-        SET ("name", "email") = ROW ($1, $2) 
+        SET 
+           "name" = COALESCE($1, "name"),
+           "email" = COALESCE($2, "email")
         WHERE
             id = $3
         RETURNING *;
@@ -178,14 +181,14 @@ export const updateDeveloperInfo = async ( req: Request, res: Response): Promise
     const formatString: string = format(
       `
       UPDATE
-      developer_infos
-  SET
-      "developerSince" = COALESCE($1, "developerSince"),
-      "preferredOS" = COALESCE($2, "preferredOS")
-  WHERE
-      id = (SELECT "developerInfoId" FROM developers WHERE id = $3)
-  RETURNING *;
-          `,
+         developer_infos
+      SET
+        "developerSince" = COALESCE($1, "developerSince"),
+        "preferredOS" = COALESCE($2, "preferredOS")
+      WHERE
+        id = (SELECT "developerInfoId" FROM developers WHERE id = $3)
+      RETURNING *;
+    `,
     );
 
     const queryConfig: QueryConfig = {
@@ -194,11 +197,9 @@ export const updateDeveloperInfo = async ( req: Request, res: Response): Promise
     };
 
     const queryResult: DeveloperResult = await client.query(queryConfig);
-    console.log(queryResult);
 
     return res.status(201).json(queryResult.rows[0]);
   } catch (error: any) {
-    console.log(error)
     return res.status(500).json({
       message: "Internal server error",
     });

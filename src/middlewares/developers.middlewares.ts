@@ -74,7 +74,7 @@ export const ensureDeveloperIdExists = async ( req: Request, res: Response, next
   };
 
   const checkExistenceResult: DeveloperResult = await client.query(checkExistenceQueryConfig);
-  console.log(checkExistenceResult.rows.length)
+
   if (!checkExistenceResult.rows.length) {
     return res.status(404).json({ message: "Developer not found" });
   }
@@ -114,13 +114,10 @@ export const ensureInfoDeveloperExists = async (
         return res.status(404).json({ message: "Developer not found" });
       }
 
-   
-
     if (checkExistenceResult.rows.length > 0) {
       if (checkExistenceResult.rows[0].developerInfoId) {
         return res.status(409).json({ message: "The developer already has the registered information." });
       }
-
     }
 
     if (!developerSince) {
@@ -147,11 +144,9 @@ export const ensureInfoDeveloperExists = async (
       }
     }
 
-   
-
     next();
+
   } catch (error: any) {
-    console.log(error)
     return res.status(500).json({
       message: "Internal server error",
     });
@@ -166,17 +161,22 @@ export const ensureDevelopersRepeatMiddleware = async (
   const id: number = parseInt(request.params.id);
 
   const { name, email } = request.body;
-
+  
+  if (!email || !name) {
+    response.status(400).json({ message: "You need to insert one of the required fields." });
+    return;
+  }
+ 
   if (name) {
     if (typeof name !== "string") {
-      response.status(400).json({ message: "invalid input type" });
+      response.status(400).json({ message: "Invalid name type." });
       return;
     }
   }
 
   if (email) {
     if (typeof email !== "string") {
-      response.status(400).json({ message: "invalid input type" });
+      response.status(400).json({ message: "Invalid email type." });
       return;
     }
   }
@@ -196,7 +196,7 @@ export const ensureDevelopersRepeatMiddleware = async (
   };
 
   const queryResult: DeveloperResult = await client.query(queryConfig);
- 
+
 
   if (email) {
     if (queryResult.rows[0].email === request.body.email) {
@@ -208,14 +208,11 @@ export const ensureDevelopersRepeatMiddleware = async (
   next();
 };
 
-export const ensureUpdateInfoDeveloperExists = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<Response | void> => {
+export const ensureUpdateInfoDeveloperExists = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
   try {
     const { developerSince, preferredOS }: DeveloperInfo = req.body;
     const id = req.params.id;
+    const validateOS = ["Windows", "Linux", "MacOS"]
 
     const checkExistenceQueryString: string = `
                   SELECT 
@@ -249,69 +246,50 @@ export const ensureUpdateInfoDeveloperExists = async (
       values: [id],
     };
 
-    const checkExistenceResult: DeveloperResult = await client.query(
-      checkExistenceQueryConfig
-    );
-    const checkExistenceInfoResult: iDeveloperInfoResultQS = await client.query(
-      checkExistenceInfoQueryString
-    );
+    const checkExistenceResult: DeveloperResult = await client.query(checkExistenceQueryConfig);
+    const checkExistenceInfoResult: iDeveloperInfoResultQS = await client.query(checkExistenceInfoQueryString);
 
-    console.log(checkExistenceInfoResult.rows[0].preferredOS)
+    if (checkExistenceResult.rows.length === 0) {
+        return res.status(404).json({ message: "Developer not found" });
+    }
 
     if (checkExistenceInfoResult.rows.length === 0) {
-        return res.status(404).json({ message: "The developer has not yet registered the information." })
+        return res.status(404).json({ message: "The developer has not yet registered the information." });
     }
 
     if (!preferredOS && !developerSince) {
         res.status(400).json({ message: "You need to insert one of the required fields." });
         return;
     }
-   
-    if (preferredOS) {
-        if (preferredOS !== ("Windows" || "Linux" || "MacOS")) {
-            res.status(400).json({ message: "You need to fill in the preferredOS with one of the types: Windows, Linux or MacOS" });
-            return;
-        }
-    }
-   
-    if(developerSince) {
-        if(developerSince.length !== 10) {
-            res.status(400).json({ message: "You need to enter the developerSince type in the following format: 'xxxx-xx-xx'" });
-            return;
-        }
-    }
-    
 
-    if (checkExistenceResult) {
-      if (!checkExistenceResult.rows.length) {
-        return res.status(404).json({ message: "Developer not found" });
-      }
-    }
-
-    
-
-    if (developerSince) {
-      if (typeof developerSince !== "string") {
-        res.status(400).json({ message: "invalid 'developerSince' type" });
+    if (preferredOS && !validateOS.includes(preferredOS)) {
+        res.status(400).json({ message: "You need to fill in the preferredOS with one of the types: Windows, Linux or MacOS" });
         return;
-      }
     }
 
-    if (preferredOS) {
-      if (typeof preferredOS !== "string") {
-        res.status(400).json({ message: "invalid 'preferredOS' type" });
+    if (developerSince && developerSince.length !== 10) {
+        res.status(400).json({ message: "You need to enter the developerSince type in the following format: 'xxxx-xx-xx'" });
         return;
-      }
     }
 
-    if (checkExistenceInfoResult.rows.length && checkExistenceInfoResult.rows[0].preferredOS === preferredOS) {
-      res.status(409).json({ message: `already exists ${preferredOS} in ${checkExistenceInfoResult.rows[0].email}`});
-      return;
+    if (checkExistenceInfoResult.rows[0].preferredOS === preferredOS) {
+        res.status(409).json({ message: `already exists ${preferredOS} in ${checkExistenceInfoResult.rows[0].email}`});
+        return;
     }
+
+    if (typeof preferredOS !== 'string') {
+        res.status(400).json({ message: "'preferredOS' invalid type." });
+        return;
+    }
+
+    if (typeof developerSince !== 'string') {
+        res.status(400).json({ message: "'developerSince' invalid type." });
+        return;
+    }
+
 
     next();
   } catch (error: any) {
-    console.log(error)
     return res.status(500).json({
       message: "Internal server error",
     });

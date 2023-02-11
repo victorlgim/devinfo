@@ -1,3 +1,5 @@
+import { QueryResult } from "pg";
+
 export interface Project {
   id: number;
   name: string;
@@ -8,6 +10,8 @@ export interface Project {
   endDate?: Date;
   developerId: number;
 }
+
+export type ProjectResult = QueryResult<Project>
 
 export interface ProjectTechnology {
   id: number;
