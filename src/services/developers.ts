@@ -207,10 +207,7 @@ export const updateDeveloper = async ( req: Request, res: Response): Promise<Res
   }
 };
 
-export const updateDeveloperInfo = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const updateDeveloperInfo = async ( req: Request, res: Response): Promise<Response> => {
   try {
     const id: number = parseInt(req.params.id);
 

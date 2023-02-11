@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addProjects, addTechnologiesProjects, deleteProject, deleteTech, getAllProjects, getProjectById, updateProjects } from "../logic/projects";
+import { addProjects, addTechnologiesProjects, deleteProject, deleteTech, getAllProjects, getProjectById, updateProjects } from "../services/projects";
 import { ensureProjectExistsMiddleware, ensureProjectsExistsIdMiddleware } from "../middlewares/projects/ensureProjectExists";
 import { ensureProjectsExistsDeleteIdMiddleware, ensureProjectsExistsTechnologiesMiddleware, ensureUpdateInfoProjectsExists } from "../middlewares/projects/ensureProjectsRepeat";
 

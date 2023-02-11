@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addDeveloper, addDeveloperInfo, deleteDeveloper, getAllDevelopers, getDeveloper, getDeveloperAndProjects, updateDeveloper, updateDeveloperInfo } from "../logic/developers";
+import { addDeveloper, addDeveloperInfo, deleteDeveloper, getAllDevelopers, getDeveloper, getDeveloperAndProjects, updateDeveloper, updateDeveloperInfo } from "../services/developers";
 import { ensureDeveloperExists, ensureDeveloperIdExists, ensureInfoDeveloperExists } from "../middlewares/developers/ensureDeveloperExists";
 import { ensureDevelopersRepeatMiddleware, ensureUpdateInfoDeveloperExists } from "../middlewares/developers/ensureDevelopersRepeat";
 
