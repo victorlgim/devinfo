@@ -1,40 +1,43 @@
 import { Request, Response } from "express";
 import format from "pg-format";
-import { Developer, DeveloperResult, DeveloperInfo, DeveloperInfoResult } from "../interfaces/developer";
+import {
+  Developer,
+  DeveloperResult,
+  DeveloperInfo,
+  DeveloperInfoResult,
+} from "../interfaces/developer";
 import { QueryConfig } from "pg";
 import { client } from "../database";
 
-export const getAllProjectsAndTechnologies = async (req: Request, res: Response): Promise<Response> => {
-    const getProjectsQueryString: string = format(`
-      SELECT 
-        projects.id AS "projectID", 
-        projects.name AS "projectName", 
-        projects.description AS "projectDescription",
-        projects."estimatedTime" AS "projectEstimatedTime", 
-        projects.repository AS "projectRepository",
-        projects."startDate" AS "projectStartDate", 
-        projects."endDate" AS "projectEndDate",
-        projects."developerId" AS "projectDeveloperID", 
-        technologies.id AS "technologyID", 
-        technologies.name AS "technologyName"
-      FROM 
-        projects
-      LEFT JOIN 
-         projects_technologies ON projects.id = projects_technologies."projectId"
-      LEFT JOIN 
-         technologies ON projects_technologies."technologyId" = technologies.id
+export const getAllDevelopers = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const getProjectsQueryString: string = format(`
+    SELECT 
+    developers.id AS "developerID", 
+    developers.name AS "developerName", 
+    developers.email AS "developerEmail", 
+    developer_infos.id AS "developerInfoID",
+    developer_infos."developerSince" AS "developerInfoDeveloperSince", 
+    developer_infos."preferredOS" AS "developerInfoPreferredOS" FROM developers
+ LEFT JOIN 
+    developer_infos ON developers."developerInfoId" = developer_infos.id
       ORDER BY 
-         projects.id;
+         developers.id;
     `);
-  
-    const getProjectsResult: any = await client.query(getProjectsQueryString);
-  
-    return res.status(200).json(getProjectsResult.rows);
-  };
-export const getDeveloper = async ( req: Request, res: Response): Promise<Response> => {
-    const id = req.params.id
 
-    const getDevelopersQueryString: string = `
+  const getProjectsResult: any = await client.query(getProjectsQueryString);
+
+  return res.status(200).json(getProjectsResult.rows);
+};
+export const getDeveloper = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const id = req.params.id;
+
+  const getDevelopersQueryString: string = `
     SELECT 
        developers.id AS "developerID", 
        developers.name AS "developerName", 
@@ -50,18 +53,23 @@ export const getDeveloper = async ( req: Request, res: Response): Promise<Respon
 
   const checkExistenceQueryConfig: QueryConfig = {
     text: getDevelopersQueryString,
-    values: [id]
+    values: [id],
   };
 
-  const checkExistenceResult: DeveloperResult = await client.query(checkExistenceQueryConfig.text, [id]);
+  const checkExistenceResult: DeveloperResult = await client.query(
+    checkExistenceQueryConfig.text,
+    [id]
+  );
 
   return res.status(200).json(checkExistenceResult.rows[0]);
 };
 
-
-export const addDeveloper = async ( req: Request, res: Response): Promise<Response> => {
+export const addDeveloper = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   try {
-    const {name, email}: Developer = req.body;
+    const { name, email }: Developer = req.body;
 
     const insertDeveloperInfoQueryString: string = format(
       `
@@ -70,14 +78,17 @@ export const addDeveloper = async ( req: Request, res: Response): Promise<Respon
         VALUES 
            ($1, $2)
         RETURNING *;
-      `);
+      `
+    );
 
     const queryConfig: QueryConfig = {
-        text: insertDeveloperInfoQueryString,
-        values: [name, email],
-      };
+      text: insertDeveloperInfoQueryString,
+      values: [name, email],
+    };
 
-    const developerInfoResult: DeveloperResult = await client.query(queryConfig);
+    const developerInfoResult: DeveloperResult = await client.query(
+      queryConfig
+    );
 
     return res.status(201).json(developerInfoResult.rows[0]);
   } catch (error: any) {
@@ -87,7 +98,10 @@ export const addDeveloper = async ( req: Request, res: Response): Promise<Respon
   }
 };
 
-export const addDeveloperInfo = async ( req: Request, res: Response): Promise<Response> => {
+export const addDeveloperInfo = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   try {
     const developerId: number = parseInt(req.params.id);
 
@@ -108,7 +122,9 @@ export const addDeveloperInfo = async ( req: Request, res: Response): Promise<Re
       values: [developerInfoData.developerSince, developerInfoData.preferredOS],
     };
 
-    const developerInfoResult: DeveloperInfoResult = await client.query(queryConfig);
+    const developerInfoResult: DeveloperInfoResult = await client.query(
+      queryConfig
+    );
 
     const developerInfoId = developerInfoResult.rows[0].id;
 
@@ -141,42 +157,51 @@ export const addDeveloperInfo = async ( req: Request, res: Response): Promise<Re
   }
 };
 
-export const updateDeveloper = async ( req: Request, res: Response): Promise<Response> => {
-  const id: number = parseInt(req.params.id);
-
-  const updateData = { id };
-  Object.assign(updateData, req.body);
-
-  const { name, email } = req.body
-
-  const formatString: string = format(
-    `
-        UPDATE 
-            developers 
-        SET 
-           "name" = COALESCE($1, "name"),
-           "email" = COALESCE($2, "email")
-        WHERE
-            id = $3
-        RETURNING *;
-    `,
-  );
-
-  const queryConfig: QueryConfig = {
-    text: formatString,
-    values: [name, email, id],
-  };
-
-  const queryResult: DeveloperResult = await client.query(queryConfig);
-
-  return res.status(201).json(queryResult.rows[0]);
-};
-
-export const updateDeveloperInfo = async ( req: Request, res: Response): Promise<Response> => {
+export const updateDeveloper = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { name, email } = req.body;
   try {
     const id: number = parseInt(req.params.id);
 
-    const { developerSince, preferredOS } = req.body
+    const updateData = { id };
+    Object.assign(updateData, req.body);
+
+    const formatString: string = format(
+      `
+              UPDATE 
+                  developers 
+              SET 
+                 "name" = COALESCE($1, "name"),
+                 "email" = COALESCE($2, "email")
+              WHERE
+                  id = $3
+              RETURNING *;
+          `
+    );
+
+    const queryConfig: QueryConfig = {
+      text: formatString,
+      values: [name, email, id],
+    };
+
+    const queryResult: DeveloperResult = await client.query(queryConfig);
+
+    return res.status(201).json(queryResult.rows[0]);
+  } catch (error: any) {
+    return res.status(409).json({ message: `already exists ${email}` });
+  }
+};
+
+export const updateDeveloperInfo = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  try {
+    const id: number = parseInt(req.params.id);
+
+    const { developerSince, preferredOS } = req.body;
 
     const formatString: string = format(
       `
@@ -188,7 +213,7 @@ export const updateDeveloperInfo = async ( req: Request, res: Response): Promise
       WHERE
         id = (SELECT "developerInfoId" FROM developers WHERE id = $3)
       RETURNING *;
-    `,
+    `
     );
 
     const queryConfig: QueryConfig = {
@@ -206,18 +231,19 @@ export const updateDeveloperInfo = async ( req: Request, res: Response): Promise
   }
 };
 
-export const deleteDeveloper = async ( req: Request, res: Response): Promise<Response> => {
-    const id = req.params.id
+export const deleteDeveloper = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const id = req.params.id;
 
-    const deleteDevelopersQueryString: string = `
+  const deleteDevelopersQueryString: string = `
        DELETE FROM developers
        WHERE id = $1
        RETURNING *;
 `;
 
+  await client.query(deleteDevelopersQueryString, [id]);
 
-
- await client.query(deleteDevelopersQueryString, [id]); 
-   
- return res.status(204).send();
+  return res.status(204).send();
 };

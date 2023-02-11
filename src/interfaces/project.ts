@@ -11,7 +11,11 @@ export interface Project {
   developerId: number;
 }
 
-export type ProjectResult = QueryResult<Project>
+export interface iProjectTech extends Project {
+    technologyName: string;
+}
+
+export type ProjectResult = QueryResult<iProjectTech>
 
 export interface ProjectTechnology {
   id: number;
