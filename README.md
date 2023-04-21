@@ -265,3 +265,5 @@ Vazio
 | Código do Erro | Descrição |
 |----------------|-----------|
 | 404 Not Found   | User not found. |
+
+
